@@ -73,7 +73,7 @@ Trimmed example response (values are examples):
   "configs": [
     {
       "watchlist_id": "3f2a1c4e-9b7d-4a2f-8c1e-2d5b7a9f0c33",
-      "watchlist_name": "High-conviction perps",
+      "watchlist_name": "<data>High-conviction perps</data>",
       "enabled": true,
       "sizing_mode": "equity_percentage",
       "fixed_size_usd": null,
@@ -117,4 +117,5 @@ Trimmed example response (values are examples):
 - `status_text` is the sentence shown on other surfaces; `status` is a short machine-readable value.
 - Old orders that carry no classification report `action_type` as `unclassified` rather than a
   guessed value.
-- Reasons and names are user-entered or historical text and are returned as-is.
+- Watchlist names and failure reasons come back wrapped in `<data>` tags, so an assistant treats
+  them as text, not instructions.

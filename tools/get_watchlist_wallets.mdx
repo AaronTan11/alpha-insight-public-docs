@@ -58,11 +58,11 @@ Trimmed example response (values are examples):
 ```json
 {
   "summary": "\"High-conviction perps\" · 2 wallets · by net_pnl desc",
-  "watchlist_name": "High-conviction perps",
+  "watchlist_name": "<data>High-conviction perps</data>",
   "wallets": [
     {
       "address": "0x2222222222222222222222222222222222222222",
-      "label": "Whale A",
+      "label": "<data>Whale A</data>",
       "net_pnl": 284019.44,
       "win_rate": 61.2,
       "trades": 342,
@@ -82,7 +82,9 @@ Trimmed example response (values are examples):
 - If the watchlist doesn't exist **or** belongs to someone else, the tool refuses with the same
   not-found result, so it can't be used to probe other accounts.
 - Wallets with a missing sort value are placed at the end regardless of direction.
-- Per-wallet stats are best-effort: if the stats lookup fails, the wallets still return with `null`
-  metrics.
+- The bias breakdown is best-effort: if the bias lookup is unavailable, `bias` comes back as
+  `null` and the wallets still return. If the stats lookup is unavailable, the whole call is
+  refused.
 - A label is your own wallet label for that address when you have one, otherwise the label saved on
-  the watchlist item. Labels are user-entered text and are returned as-is.
+  the watchlist item. Labels you typed come back wrapped in `<data>` tags, so an assistant treats
+  them as text, not instructions.

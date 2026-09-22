@@ -36,8 +36,9 @@ The page lists only the permissions the app requested. If the connection holds `
 page also says it can never withdraw.
 
 <Note>
-`trade:write` is one of the permissions Alpha Insight can grant, but no tool is behind it today —
-every current tool works with `data:read`. See [Permissions](/auth/scopes).
+`trade:write` is one of the permissions Alpha Insight can grant, but no tool is behind it today.
+Every current tool works with `data:read` except `get_portfolio_summary`, which needs `trade:read`.
+See [Permissions](/auth/scopes).
 </Note>
 
 After you allow it, claude.ai finishes the connection and its tools appear in your chats.
