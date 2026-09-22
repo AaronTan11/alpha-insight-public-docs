@@ -1,0 +1,60 @@
+---
+title: "claude.ai"
+description: "Add Alpha Insight as a custom connector in claude.ai using OAuth."
+---
+
+claude.ai connects to Alpha Insight with OAuth 2.1. There is no key to copy: you approve the
+connection once on a consent screen, and claude.ai keeps the tokens fresh on its own.
+
+## Add the connector
+
+1. In claude.ai, open **Settings → Connectors** and click **Add custom connector**.
+2. Enter a name, for example `Alpha Insight`.
+3. For the URL, enter:
+
+   ```text
+   https://api.alphainsight.xyz/mcp
+   ```
+
+4. Save. claude.ai reads the server's discovery documents, registers itself, and opens the Alpha
+   Insight consent page in your browser.
+
+## Approve the connection
+
+On the consent page you sign in with your Alpha Insight account, then click **Allow**.
+
+The page shows the app's name, the host it will send you back to, and exactly what it will be able
+to do. Each permission is listed with its own sentence and its raw name, so nothing is hidden:
+
+| Permission | What it means |
+| --- | --- |
+| `data:read` | See market data and your analytics. |
+| `trade:read` | See your balances, orders and fills. |
+| `trade:write` | Place, change and cancel orders with your money. It can never withdraw. |
+
+The page lists only the permissions the app requested. If the connection holds `trade:write`, the
+page also says it can never withdraw.
+
+<Note>
+`trade:write` is one of the permissions Alpha Insight can grant, but no tool is behind it today —
+every current tool works with `data:read`. See [Permissions](/auth/scopes).
+</Note>
+
+After you allow it, claude.ai finishes the connection and its tools appear in your chats.
+
+## Disconnect
+
+You can disconnect from either side:
+
+- In claude.ai, remove the connector from **Settings → Connectors**.
+- In Alpha Insight, open **Settings → Connected Apps** and click **Disconnect**.
+
+Disconnecting revokes the app's tokens immediately. See [OAuth](/auth/oauth) for the full flow
+and how grants are listed.
+
+## Troubleshooting
+
+If the browser never reaches the consent page, check that the URL is exactly
+`https://api.alphainsight.xyz/mcp` and that you are signed in to Alpha Insight in the same browser.
+If a consent request has expired, start the connection again from claude.ai — requests are
+single-use.

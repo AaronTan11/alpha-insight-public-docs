@@ -1,0 +1,65 @@
+---
+title: "Errors"
+description: "The refusals Alpha Insight returns, and what each means."
+---
+
+Alpha Insight refuses a request without ever dropping the connection. There are two places a
+refusal can come from: the credential check (before any tool runs) and the tool call itself.
+
+## Credential errors
+
+A missing or bad credential fails before any tool runs. Over HTTP these come back with a status
+code and a JSON-RPC error object; the `message` is the sentence to show the user.
+
+| Status | Sentence | When |
+| --- | --- | --- |
+| `401` | `Missing bearer credential. Send 'Authorization: Bearer <ak_live_… API key or OAuth access token>'.` | No `Authorization` header was sent. |
+| `401` | `Unrecognized bearer credential. Send an 'ak_live_…' API key or an OAuth access token.` | The header was sent, but it isn't an Alpha Insight key or token. |
+| `401` | `Invalid or revoked API key.` | The key is unknown or has been revoked. |
+| `401` | `This key has expired. Create a new one in Settings.` | The key's chosen lifetime has passed. |
+| `401` | `Invalid, expired, or revoked access token.` | An OAuth access token is unknown, expired, or revoked. |
+| `403` | `Account suspended due to chargeback dispute. Contact support@alphainsight.xyz to resolve.` | The account is suspended. |
+
+A `401` also carries a `WWW-Authenticate` header pointing at the server's discovery document, which
+is how OAuth-capable clients start the sign-in flow.
+
+## Tool refusals
+
+Once the credential is accepted, a tool can refuse a call. The result has `isError: true`, with the
+sentence in both the text block and `_meta.message`.
+
+| Code | Sentence | When it happens |
+| --- | --- | --- |
+| `NOT_FOUND` | `Not found.` | Nothing matched. |
+| `VALIDATION_FAILED` | `Invalid input: <reason>` | The input is invalid. |
+| `TIMEOUT` | `The request timed out. Please try again.` | The call took too long. |
+| `INTERNAL` | `Something went wrong running this tool.` | Something went wrong on our side. |
+| `RATE_LIMITED` | `Too many requests right now — try again in N seconds.` (or `try again shortly` when no wait is known) | A free-account call cap was hit. |
+| `RATE_LIMITED` | `This deployment has no free-lane call limits configured, so this call was not run. Nothing else changed.` | No call limits are configured on this deployment. |
+| `SCOPE_INSUFFICIENT` | `This connection cannot do that. It needs trading turned on — reconnect the app, or create a key with trading turned on.` | The credential lacks a needed permission. |
+
+The code is what Alpha Insight records for the refusal on its own side; a caller reads the sentence.
+Treat the sentence as the contract, not the code.
+
+<Note>
+Some tools return a partial result instead of refusing — for example, a list tool that couldn't
+load its stats returns the rows with `null` metrics and a note in the summary. Those are described
+on each [tool page](/tools/overview).
+</Note>
+
+## Reading a refusal
+
+- **`Not found.`** — the wallet, watchlist, coin, or record doesn't exist. Ownership and existence
+  are deliberately indistinguishable for another user's watchlist, so a refusal can't be used to
+  find out whether an ID exists.
+- **`Invalid input: …`** — the input failed a check, for example a bad wallet address or a missing
+  required field. The reason names the problem.
+- **`The request timed out.`** — the tool took longer than its own limit. Retrying usually works.
+- **`Something went wrong running this tool.`** — an unexpected failure. The detail is logged on our
+  side; retry, and contact support if it persists.
+- **`Too many requests…`** — you hit a free-account call cap. See [Limits](/limits).
+- **`This connection cannot do that.`** — the credential doesn't hold the permission the tool needs.
+  See [Permissions](/auth/scopes).
+
+A refusal never revokes, narrows, or pauses a connection. It refuses one call, and the calls your
+credential is allowed to make keep working.

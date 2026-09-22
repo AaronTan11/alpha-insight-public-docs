@@ -1,0 +1,88 @@
+---
+title: "get_watchlist_wallets"
+description: "The wallets inside one of your watchlists, with per-wallet stats."
+---
+
+Expands one watchlist into its wallets, with per-wallet performance and any labels you set.
+Requires the watchlist to belong to the signed-in account.
+
+## Inputs
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `watchlist_id` | string (UUID) | Yes | — | The watchlist to expand. You must own it. |
+| `limit` | integer 1–50 | No | `20` | Maximum wallets to return. The full set is always loaded; extras beyond `limit` are dropped and `truncated` is set. |
+| `sort_by` | `net_pnl` \| `win_rate` \| `trade_frequency` | No | `net_pnl` | Metric to sort by. |
+| `sort_order` | `asc` \| `desc` | No | `desc` | Sort direction. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `watchlist_name` | string | The watchlist's name. |
+| `wallets` | object[] | The returned wallets. |
+| `total` | integer | Total wallets in the watchlist. |
+| `returned` | integer | Wallets returned in this call. |
+| `truncated` | boolean | `true` when `total` exceeds `returned`. |
+| `sort` | object | The `field` and `order` applied. |
+
+Each entry in `wallets` has: `address`, `label` (or `null`), `net_pnl` (or `null`), `win_rate` (or
+`null`), `trades` (or `null`), `trade_frequency` (or `null`), and `bias` (or `null`).
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_watchlist_wallets",
+      "arguments": {
+        "watchlist_id": "3f2a1c4e-9b7d-4a2f-8c1e-2d5b7a9f0c33",
+        "limit": 20,
+        "sort_by": "net_pnl",
+        "sort_order": "desc"
+      }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "\"High-conviction perps\" · 2 wallets · by net_pnl desc",
+  "watchlist_name": "High-conviction perps",
+  "wallets": [
+    {
+      "address": "0x2222222222222222222222222222222222222222",
+      "label": "Whale A",
+      "net_pnl": 284019.44,
+      "win_rate": 61.2,
+      "trades": 342,
+      "trade_frequency": 4.8,
+      "bias": { "longTrades": 210, "shortTrades": 132, "longPercent": 61.4, "shortPercent": 38.6 }
+    }
+  ],
+  "total": 12,
+  "returned": 1,
+  "truncated": true,
+  "sort": { "field": "net_pnl", "order": "desc" }
+}
+```
+
+## Limits and caveats
+
+- If the watchlist doesn't exist **or** belongs to someone else, the tool refuses with the same
+  not-found result, so it can't be used to probe other accounts.
+- Wallets with a missing sort value are placed at the end regardless of direction.
+- Per-wallet stats are best-effort: if the stats lookup fails, the wallets still return with `null`
+  metrics.
+- A label is your own wallet label for that address when you have one, otherwise the label saved on
+  the watchlist item. Labels are user-entered text and are returned as-is.

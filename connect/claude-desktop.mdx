@@ -1,0 +1,65 @@
+---
+title: "Claude Desktop"
+description: "Connect the Claude Desktop app with the mcp-remote bridge."
+---
+
+The Claude Desktop app connects to local (stdio) servers directly. To reach Alpha Insight — a
+remote server — use the [`mcp-remote`](https://www.npmjs.com/package/mcp-remote) bridge, which
+speaks stdio to Claude Desktop and Streamable HTTP to Alpha Insight.
+
+## 1. Open the config file
+
+Claude Desktop reads `claude_desktop_config.json`:
+
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
+
+If the file does not exist yet, enable it under **Settings → Developer** in Claude Desktop.
+
+## 2. Add the server
+
+Add an entry under `mcpServers`. Keep the key in an environment variable rather than in the
+command arguments:
+
+```json
+{
+  "mcpServers": {
+    "alpha-insight": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://api.alphainsight.xyz/mcp",
+        "--header",
+        "Authorization: Bearer ${AUTH_TOKEN}"
+      ],
+      "env": {
+        "AUTH_TOKEN": "ak_live_your_key_here"
+      }
+    }
+  }
+}
+```
+
+Save the file and restart Claude Desktop. You should see a tools indicator in the input box.
+
+<Note>
+To sign in with OAuth instead, delete the `--header` line and the `AUTH_TOKEN` entry. On first
+connect, `mcp-remote` opens a browser to the Alpha Insight consent page and keeps the tokens after
+you approve.
+</Note>
+
+## 3. Verify
+
+Ask Claude Desktop something that uses the tools, for example: "Use list_markets to show me the
+perps on the main exchange." If the tools don't appear, open Claude Desktop's MCP logs and restart
+the app.
+
+<Warning>
+Never put your key in a URL. Alpha Insight reads credentials only from the `Authorization` header,
+and request paths are logged.
+</Warning>
+
+Need a key? Create one in
+[Settings → API Keys](https://alphainsight.xyz/settings?tab=api-keys) — see
+[API keys](/auth/api-keys).

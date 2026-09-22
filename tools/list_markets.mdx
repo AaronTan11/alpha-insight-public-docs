@@ -1,0 +1,71 @@
+---
+title: "list_markets"
+description: "Every tradable perp and dex on Hyperliquid."
+---
+
+Lists what's tradable: every perp across the main exchange and all HIP-3 dexes, with maximum
+leverage and size decimals, plus the dex directory and optionally the spot tokens.
+
+## Inputs
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `dex` | string 1–20 chars | No | — | Filter to one dex: `main` for the main exchange, or a HIP-3 dex name like `xyz`. Omit for all dexes. |
+| `include_spot` | boolean | No | `false` | Also list spot tokens. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `dexes` | object[] | Directory of dexes: `name` and `full_name`. |
+| `perps` | object[] | Every perp across the included dexes. |
+| `spot_tokens` | object[] | Spot tokens, when `include_spot` is set. |
+
+Each entry in `perps` has: `coin`, `dex`, `max_leverage` (or `null`), `sz_decimals` (or `null`), and
+`delisted`.
+
+Each entry in `spot_tokens` has: `name`, `full_name` (or `null`), and `index`.
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "list_markets",
+      "arguments": { "dex": "main", "include_spot": false }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "212 perps across 1 dex(es)",
+  "dexes": [
+    { "name": "main", "full_name": "Hyperliquid main exchange" }
+  ],
+  "perps": [
+    { "coin": "BTC", "dex": "main", "max_leverage": 40, "sz_decimals": 5, "delisted": false }
+  ],
+  "spot_tokens": []
+}
+```
+
+## Limits and caveats
+
+- The full market list is cached for one hour, so repeat calls return quickly.
+- An unknown `dex` value is refused, and the message lists the known dex names.
+- If a specifically requested dex's data fails to load, the tool refuses rather than presenting an
+  empty market list for it.
+- When listing all dexes, a dex whose data fails to load is skipped rather than blanking the whole
+  listing; the tool only refuses when every dex fails.
+- `max_leverage` and `sz_decimals` are `null` when the venue didn't provide them.

@@ -1,0 +1,80 @@
+---
+title: "get_market_snapshot"
+description: "Live price, funding, open interest, and volume for up to 20 coins."
+---
+
+Returns a live snapshot for one or more coins: mid, mark, and oracle price, hourly funding rate,
+open interest, 24h volume, premium, and 24h price change. Data is around 60 seconds fresh.
+
+## Inputs
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `coins` | string[] | Yes | Coins to snapshot. Between 1 and 20 entries; each 1–30 characters. Accepts `BTC`, `ETH`, or a HIP-3 asset like `xyz:TSLA`. A bare HIP-3 ticker is resolved to its dex-qualified form; an ambiguous ticker expands to every matching dex. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `markets` | object[] | One entry per resolved coin. |
+| `unresolved` | object[] | Inputs that could not be resolved. |
+
+Each entry in `markets` has: `requested`, `coin`, `dex`, `mid_price`, `mark_price`, `oracle_price`,
+`funding_rate_hourly`, `open_interest_base`, `open_interest_usd`, `volume_24h_usd`, `premium`, and
+`change_24h_pct` — all nullable except `requested`, `coin`, and `dex`.
+
+Each entry in `unresolved` has `requested`, `coin`, and `reason` — either `unknown_ticker` or
+`no_market_data`.
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_market_snapshot",
+      "arguments": { "coins": ["BTC", "ETH"] }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "2 market(s) · BTC $111,204",
+  "markets": [
+    {
+      "requested": "BTC",
+      "coin": "BTC",
+      "dex": "main",
+      "mid_price": 111205.5,
+      "mark_price": 111204,
+      "oracle_price": 111198.5,
+      "funding_rate_hourly": 0.0000125,
+      "open_interest_base": 32145.2,
+      "open_interest_usd": 3574685120.0,
+      "volume_24h_usd": 12843000000.0,
+      "premium": 0.00005,
+      "change_24h_pct": 1.84
+    }
+  ],
+  "unresolved": []
+}
+```
+
+## Limits and caveats
+
+- Up to 20 coins per call. Each ticker is 1–30 characters.
+- Returns at most 60-second-fresh data (the server caches each dex's asset contexts for 60 seconds).
+- If none of the coins resolve to a market, the call is refused rather than returning an empty list.
+- `open_interest_usd` is `null` when the base open interest or the mark price is missing.
+- `unresolved` distinguishes a ticker that doesn't exist (`unknown_ticker`) from a known coin with no
+  current market data (`no_market_data`).

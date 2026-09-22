@@ -1,0 +1,65 @@
+---
+title: "Limits"
+description: "Call caps, concurrency, and what a refusal looks like."
+---
+
+Alpha Insight keeps the API predictable for everyone with two kinds of limits: a per-account call
+cap on free accounts, and a per-account limit on how many calls run at once.
+
+## Free-account call caps
+
+Free accounts are welcome on the API. Free calls are counted in two windows:
+
+- **Per minute** — at most **4** calls per minute.
+- **Per UTC day** — at most **200** calls per UTC day.
+
+Both are counted per account. A call counts when a tool runs; asking for the tool list or opening a
+connection does not.
+
+{/* TODO-OWNER: confirm the published free limits */}
+
+<Note>
+Calls from a paid account are not charged against these free-account caps. So a paid account isn't
+stopped by them; its calls are governed by the per-account concurrency limit below.
+
+{/* TODO-OWNER: confirm the published paid-plan call behaviour */}
+</Note>
+
+A call that would exceed a cap is refused, and it isn't counted against the other window — so a
+refusal doesn't cost you one of the day's calls.
+
+## Per-account concurrency
+
+Each account can have **3 tool calls in flight at once**. A fourth call waits until one of the
+three finishes, then runs. This applies to every account, on every plan; it keeps a single caller
+from crowding out everyone else. A call that waits too long and is given up on affects only that
+call — your other calls are unaffected, and you can retry.
+
+## What a refusal looks like
+
+A refusal is a normal response, not a dropped connection. Over MCP it comes back as an error result
+with a short sentence. Over plain HTTP the same sentence is in the text block and in
+`_meta.message`.
+
+When you hit a call cap, the sentence names the wait:
+
+```text
+Too many requests right now — try again in 5 seconds.
+```
+
+If no usable wait is available, the sentence is just:
+
+```text
+Too many requests right now — try again shortly.
+```
+
+When a wait is given, the same value is in `_meta.retryAfterMs` so a client can act on it.
+
+If a deployment hasn't been given call limits, a call is refused rather than run uncounted, with
+this sentence:
+
+```text
+This deployment has no free-lane call limits configured, so this call was not run. Nothing else changed.
+```
+
+Nothing is revoked or paused by a refusal. The next call within the limit succeeds.

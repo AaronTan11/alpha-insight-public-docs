@@ -1,0 +1,70 @@
+---
+title: "Cursor and VS Code"
+description: "Connect Cursor or VS Code with an API key."
+---
+
+Both Cursor and VS Code support remote MCP servers over Streamable HTTP. Point them at
+`https://api.alphainsight.xyz/mcp` and send your key in the `Authorization` header.
+
+## Cursor
+
+Cursor reads `mcp.json` from either location:
+
+- Global: `~/.cursor/mcp.json`
+- Project: `.cursor/mcp.json`
+
+Add an entry under `mcpServers`, and keep the key in an environment variable:
+
+```json
+{
+  "mcpServers": {
+    "alpha-insight": {
+      "url": "https://api.alphainsight.xyz/mcp",
+      "headers": {
+        "Authorization": "Bearer ${env:ALPHA_INSIGHT_KEY}"
+      }
+    }
+  }
+}
+```
+
+Set `ALPHA_INSIGHT_KEY` to your `ak_live_…` key in your shell profile, then restart Cursor. Cursor
+also supports OAuth for remote servers, so it can sign in through the Alpha Insight consent page
+instead — see [OAuth](/auth/oauth).
+
+## VS Code
+
+VS Code reads `.vscode/mcp.json` in a workspace, or the user-profile `mcp.json` (open it with
+**MCP: Open User Configuration**). Use the `servers` key, and let VS Code prompt for the key so it
+isn't stored in the file:
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "alphaInsightKey",
+      "description": "Alpha Insight API key",
+      "password": true
+    }
+  ],
+  "servers": {
+    "alpha-insight": {
+      "type": "http",
+      "url": "https://api.alphainsight.xyz/mcp",
+      "headers": {
+        "Authorization": "Bearer ${input:alphaInsightKey}"
+      }
+    }
+  }
+}
+```
+
+VS Code asks for the key the first time the server starts and stores it securely after that. Accept
+the trust prompt when it appears.
+
+<Note>
+Need a key? Create one in
+[Settings → API Keys](https://alphainsight.xyz/settings?tab=api-keys) — see
+[API keys](/auth/api-keys).
+</Note>

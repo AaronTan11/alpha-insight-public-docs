@@ -1,0 +1,68 @@
+---
+title: "get_recent_trades"
+description: "The latest public trades on one coin."
+---
+
+Returns the most recent public trades that printed on a coin: the taker side, price, size, and USD
+notional.
+
+## Inputs
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `coin` | string | Yes | Coin ticker, for example `BTC` or a HIP-3 asset like `xyz:TSLA`. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `coin` | string | The resolved coin. |
+| `trades` | object[] | Trades, newest first. |
+
+Each entry in `trades` has: `time` (ISO-8601), `side` (`buy` or `sell` — the taker side), `price`,
+`size`, and `notional_usd`.
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_recent_trades",
+      "arguments": { "coin": "BTC" }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "BTC · 10 trades · last $111205.5 buy",
+  "coin": "BTC",
+  "trades": [
+    {
+      "time": "2026-09-22T03:30:12.000Z",
+      "side": "buy",
+      "price": 111205.5,
+      "size": 0.032,
+      "notional_usd": 3558.58
+    }
+  ]
+}
+```
+
+## Limits and caveats
+
+- Hyperliquid returns a fixed small window of the most recent trades (roughly the last 10). There is
+  no count parameter — the tool returns what the venue provides.
+- Trades are sorted newest first by the tool.
+- An unknown market, or a window with no parseable trades, is a not-found refusal rather than an
+  empty list.

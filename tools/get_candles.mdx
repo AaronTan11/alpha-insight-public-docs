@@ -1,0 +1,75 @@
+---
+title: "get_candles"
+description: "OHLCV candles for one coin."
+---
+
+Returns OHLCV candles for a coin: open, high, low, close, base-unit volume, and trade count for each
+bar, across intervals from 1 minute to 1 day.
+
+## Inputs
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `coin` | string | Yes | — | Coin ticker, for example `BTC` or a HIP-3 asset like `xyz:TSLA`. |
+| `interval` | `1m` \| `5m` \| `15m` \| `1h` \| `4h` \| `1d` | Yes | — | Candle interval. |
+| `bars` | integer 1–500 | No | `100` | Number of most-recent candles to return. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `coin` | string | The resolved coin. |
+| `interval` | string | The interval used. |
+| `candles` | object[] | Candles, oldest to newest. |
+
+Each entry in `candles` has: `open_time` (ISO-8601), `open`, `high`, `low`, `close`, `volume`, and
+`trades` (the number of trades in the bar).
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_candles",
+      "arguments": { "coin": "BTC", "interval": "1h", "bars": 100 }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "BTC 1h · 100 bars · last close $111204",
+  "coin": "BTC",
+  "interval": "1h",
+  "candles": [
+    {
+      "open_time": "2026-09-22T03:00:00.000Z",
+      "open": 111050.0,
+      "high": 111260.5,
+      "low": 110980.0,
+      "close": 111204.0,
+      "volume": 842.13,
+      "trades": 3184
+    }
+  ]
+}
+```
+
+## Limits and caveats
+
+- Up to 500 bars per call; the default is 100.
+- `volume` is in base units, not USD.
+- Repeated calls for the same coin, interval, and bar count within a short window share one upstream
+  fetch (cached for 30 seconds), so they return quickly.
+- An unknown market, or a range with no parseable candles, is a not-found refusal rather than a
+  hollow success.

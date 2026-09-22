@@ -1,0 +1,83 @@
+---
+title: "get_wallet_open_orders"
+description: "Live resting orders for any Hyperliquid wallet address."
+---
+
+Returns every resting (open) order for an address across the main exchange and all HIP-3 dexes.
+Public lookup: it returns orders for whichever address you provide, not for the signed-in user.
+
+## Inputs
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `address` | string | Yes | Hyperliquid wallet address: 42-character hex string starting with `0x`. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `address` | string | The lowercased address queried. |
+| `orders` | object[] | Resting orders, newest first. |
+| `dexes_queried` | string[] | The dexes searched. |
+| `dexes_skipped` | string[] | Dexes not searched because the per-call cap was reached. |
+| `truncated_dexes` | boolean | `true` when some dexes were skipped. |
+
+Each entry in `orders` has: `coin`, `dex`, `side` (`buy` or `sell`), `order_type`, `price` (or
+`null`), `trigger_price` (or `null`), `size` (or `null`), `original_size` (or `null`), `reduce_only`,
+`time_in_force` (or `null`), and `timestamp` (ISO-8601).
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_wallet_open_orders",
+      "arguments": { "address": "0x0000000000000000000000000000000000000000" }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "1 open order(s) · latest BTC buy",
+  "address": "0x0000000000000000000000000000000000000000",
+  "orders": [
+    {
+      "coin": "BTC",
+      "dex": "main",
+      "side": "buy",
+      "order_type": "Limit",
+      "price": 108000.0,
+      "trigger_price": null,
+      "size": 0.15,
+      "original_size": 0.15,
+      "reduce_only": false,
+      "time_in_force": "Gtc",
+      "timestamp": "2026-09-19T03:44:00.000Z"
+    }
+  ],
+  "dexes_queried": ["main", "xyz"],
+  "dexes_skipped": [],
+  "truncated_dexes": false
+}
+```
+
+## Limits and caveats
+
+- Queries up to 12 dexes per call. If there are more, the extra dexes are listed in `dexes_skipped`
+  and `truncated_dexes` is `true` — nothing is dropped silently.
+- The address must be a full 42-character `0x` hex string.
+- If a single dex fails to respond, its orders are omitted and the other dexes still return.
+- `order_type` falls back to `Trigger` or `Limit` when the venue does not name a type.
+- Public lookup: it never returns the signed-in user's data specifically; it looks up the address
+  you provide.

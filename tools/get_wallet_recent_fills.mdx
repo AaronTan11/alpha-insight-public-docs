@@ -1,0 +1,81 @@
+---
+title: "get_wallet_recent_fills"
+description: "Recent fills for any Hyperliquid wallet address."
+---
+
+Returns recent trade fills for an address within a lookback window: coin, taker/maker side,
+direction, price, size, USD notional, realized PnL, and fee. Public lookup: it returns fills for
+whichever address you provide, not for the signed-in user.
+
+## Inputs
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `address` | string | Yes | — | Hyperliquid wallet address: 42-character hex string starting with `0x`. |
+| `hours` | integer 1–168 | No | `24` | Lookback window in hours. |
+| `limit` | integer 1–200 | No | `50` | Maximum fills to return, newest first. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `address` | string | The lowercased address queried. |
+| `fills` | object[] | Fills, newest first. |
+| `total_in_window` | integer | Total fills found in the window, before `limit` was applied. |
+| `truncated` | boolean | `true` when `total_in_window` exceeds the returned count. |
+
+Each entry in `fills` has: `time` (ISO-8601), `coin`, `side` (`buy` or `sell`), `direction` (for
+example `Open Long`), `price`, `size`, `notional_usd`, `closed_pnl` (or `null`), `fee` (or `null`),
+and `crossed`.
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_wallet_recent_fills",
+      "arguments": { "address": "0x0000000000000000000000000000000000000000", "hours": 24, "limit": 50 }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "38 fill(s) in 24h · latest BTC buy",
+  "address": "0x0000000000000000000000000000000000000000",
+  "fills": [
+    {
+      "time": "2026-09-22T03:28:41.000Z",
+      "coin": "BTC",
+      "side": "buy",
+      "direction": "Open Long",
+      "price": 111190.0,
+      "size": 0.05,
+      "notional_usd": 5559.5,
+      "closed_pnl": null,
+      "fee": 2.48,
+      "crossed": true
+    }
+  ],
+  "total_in_window": 38,
+  "truncated": false
+}
+```
+
+## Limits and caveats
+
+- Up to 168 hours (7 days) of lookback and up to 200 fills per call.
+- `total_in_window` is the true count before `limit`; use `truncated` to tell whether more exist.
+- Partial fills of one order crossing at one price-time are merged, so the output isn't dust.
+- The address must be a full 42-character `0x` hex string.
+- `direction` is the venue's own label for the fill and may be empty for some rows.

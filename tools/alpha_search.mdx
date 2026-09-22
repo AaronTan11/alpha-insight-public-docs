@@ -1,0 +1,135 @@
+---
+title: "alpha_search"
+description: "Find and rank Hyperliquid wallets matching criteria you describe."
+---
+
+Searches Hyperliquid wallets by performance and activity, and returns them ranked. Use it to
+discover traders and screen accounts; for analytics on one wallet you already know, use
+[`get_wallet_analytics`](/tools/get_wallet_analytics).
+
+Results are paginated with an opaque cursor, and each call counts against your alpha-search quota.
+
+## Inputs
+
+All filters are optional. Omit a filter and it isn't applied.
+
+### `ticker` (object)
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `coins` | string[] | No | `[]` | Coin symbols to filter by, for example `["BTC", "ETH"]`. Empty means no coin filter. A bare ticker (`BRENTOIL`) or an explicit dex form (`xyz:SP500`) is accepted; bare HIP-3 tickers are resolved to their dex-qualified form. An ambiguous ticker is searched across every matching dex. |
+| `direction` | `long` \| `short` \| `any` | No | `any` | Keep wallets whose trades on those coins were mostly long, mostly short, or any. |
+
+### `time` (object)
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `preset` | `all-time` \| `7d` \| `30d` \| `90d` \| `custom` | No | `all-time` | Window to scope activity to. `all-time` is the cheapest; `7d`/`30d`/`90d` scan recent completed trades; `custom` needs `from` and `to`. |
+| `from` | ISO-8601 datetime | No | — | Start of a custom window, in UTC. |
+| `to` | ISO-8601 datetime | No | — | End of a custom window, in UTC. |
+
+### `performance` (object)
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `minTrades` | integer ≥ 0 | No | — | Minimum completed trades. |
+| `minVolume` | number ≥ 0 | No | — | Minimum cumulative USD volume. |
+| `minWinrate` | number 0–100 | No | — | Minimum win rate as a percentage. |
+| `minProfitFactor` | number ≥ 0 | No | — | Minimum profit factor (gross profit / gross loss). |
+| `minPnl` | number | No | — | Minimum net PnL in USD. May be negative. |
+| `pnlStatus` | `profitable` \| `losing` \| `any` | No | `any` | Restrict to overall-profitable, overall-losing, or any. |
+| `minLosingTrades` | integer ≥ 0 | No | — | Minimum number of losing trades. |
+| `maxLoss` | number ≥ 0 | No | — | Cap on allowed net loss in USD, as a positive number. |
+| `directionalBias` | `long` \| `short` \| `any` | No | `any` | Overall long-vs-short skew. |
+| `newAlphaDays` | integer 1–365 | No | — | Only wallets first active within the last N days. |
+| `minTradeFrequency` | number ≥ 0 | No | — | Minimum trades per day since the first trade. |
+| `maxTradeFrequency` | number ≥ 0 | No | — | Maximum trades per day. |
+
+### Ranking and paging
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `sortBy` | `net_pnl` \| `win_rate` \| `volume` \| `completed_trades` \| `profit_factor` \| `trade_frequency` \| `sharpe_ratio` | No | `net_pnl` | Column to rank wallets by. |
+| `sortOrder` | `asc` \| `desc` | No | `desc` | Sort direction. |
+| `limit` | integer 1–500 | No | `100` | Wallets to request. The tool returns at most 50 per page (see caveats). |
+| `cursor` | string | No | — | Opaque continuation token from a prior call's `page.cursor`. Omit for the first page. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `wallets` | object[] | Ranked wallets, each with `address`, `net_pnl`, `win_rate`, `completed_trades`, and nullable `trade_frequency`, `sharpe_ratio`, `profit_factor`, `volume`, `bias`. |
+| `page` | object | `total`, `returned`, `cursor` (or `null`), and `sort` (`field`, `order`). |
+| `requested_limit` | integer | The `limit` you asked for. |
+| `capped` | boolean | `true` when your `limit` exceeded the tool's per-page maximum. |
+| `resolved_coins` | object[] | How each coin input resolved: `input`, `resolved` (the canonical names), and `reason` (`explicit`, `main`, `hip3-unique`, `hip3-ambiguous`, or `unknown`). |
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "alpha_search",
+      "arguments": {
+        "ticker": { "coins": ["BTC"], "direction": "long" },
+        "time": { "preset": "30d" },
+        "performance": { "minTrades": 50, "minWinrate": 55 },
+        "sortBy": "net_pnl",
+        "sortOrder": "desc",
+        "limit": 50
+      }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "50 of 1,284 wallets · by net_pnl desc",
+  "wallets": [
+    {
+      "address": "0x1111111111111111111111111111111111111111",
+      "net_pnl": 284019.44,
+      "win_rate": 61.2,
+      "completed_trades": 342,
+      "trade_frequency": 4.8,
+      "sharpe_ratio": 2.31,
+      "profit_factor": 1.88,
+      "volume": 41200000.0,
+      "bias": { "longTrades": 210, "shortTrades": 132, "longPercent": 61.4, "shortPercent": 38.6 }
+    }
+  ],
+  "page": {
+    "total": 1284,
+    "returned": 50,
+    "cursor": "eyJsYXN0U29ydFZhbHVlIjoxMjM0fQ",
+    "sort": { "field": "net_pnl", "order": "desc" }
+  },
+  "requested_limit": 50,
+  "capped": false,
+  "resolved_coins": [
+    { "input": "BTC", "resolved": ["BTC"], "reason": "main" }
+  ]
+}
+```
+
+## Limits and caveats
+
+- **The tool returns at most 50 wallets per page**, even if you ask for more. Check `capped` and
+  use `page.cursor` to fetch the next page.
+- The cursor is tied to your filters and sort order. If you change any filter between calls, the
+  cursor no longer applies and the call falls back to the first page.
+- Each call counts against your alpha-search quota, the same counter the web app's alpha hunting
+  uses.
+- Live account-state filters (balances, open positions) are not available through this tool.
+- `resolved_coins` tells you how each ticker resolved, including when a bare ticker matched more
+  than one dex.

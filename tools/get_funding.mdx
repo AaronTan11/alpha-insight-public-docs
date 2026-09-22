@@ -1,0 +1,86 @@
+---
+title: "get_funding"
+description: "Current, predicted, and historical funding for one coin."
+---
+
+Combines three funding sources into one view: the live hourly funding rate and premium, the
+predicted next funding across venues, and recent hourly funding history.
+
+## Inputs
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `coin` | string | Yes | — | Coin ticker, for example `BTC` or a HIP-3 asset like `xyz:TSLA`. |
+| `history_hours` | integer 1–168 | No | `24` | Hours of funding history to include. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `coin` | string | The resolved coin. |
+| `current` | object or null | Live funding state. |
+| `predicted` | object[] | Predicted next funding per venue. |
+| `history` | object[] | Recent funding rows, newest first. |
+
+`current` has `funding_rate_hourly`, `premium`, `mark_price`, and `open_interest_usd` — all
+nullable — or is `null` when no live data was available.
+
+Each entry in `predicted` has `venue`, `funding_rate` (or `null`), `interval_hours` (or `null`), and
+`next_funding_time` (ISO-8601, or `null`).
+
+Each entry in `history` has `time` (ISO-8601), `funding_rate` (or `null`), and `premium` (or `null`).
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_funding",
+      "arguments": { "coin": "BTC", "history_hours": 24 }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "BTC funding · 0.0013%/h · 24h history",
+  "coin": "BTC",
+  "current": {
+    "funding_rate_hourly": 0.0000125,
+    "premium": 0.00005,
+    "mark_price": 111204,
+    "open_interest_usd": 3574685120.0
+  },
+  "predicted": [
+    {
+      "venue": "Binance",
+      "funding_rate": 0.0001,
+      "interval_hours": 8,
+      "next_funding_time": "2026-09-22T08:00:00.000Z"
+    }
+  ],
+  "history": [
+    { "time": "2026-09-22T03:00:00.000Z", "funding_rate": 0.0000125, "premium": 0.00004 }
+  ]
+}
+```
+
+## Limits and caveats
+
+- Up to 168 hours (7 days) of history per call; the default is 24.
+- The live rate is up to about 60 seconds old; the predicted rates are up to about 30 seconds old.
+- Predicted rates are keyed to the main exchange's tickers, so a HIP-3 asset returns an empty
+  `predicted` list.
+- `current` and `predicted` are best-effort: if either source is unavailable it comes back as `null`
+  or an empty list while the rest of the view still returns. History is the backbone — if it fails,
+  the tool refuses.

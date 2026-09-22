@@ -1,0 +1,48 @@
+---
+title: "Tools overview"
+description: "The 14 read-only tools Alpha Insight exposes over MCP and HTTP."
+---
+
+Alpha Insight exposes 14 read-only tools. They come in two groups: six wallet-analytics tools that
+also power the in-app AI chat, and eight realtime market and wallet tools read live from
+Hyperliquid.
+
+Every tool is read-only. None of them places, changes, or cancels an order.
+
+## Wallet analytics
+
+| Tool | What it answers | Permission |
+| --- | --- | --- |
+| [`get_wallet_analytics`](/tools/get_wallet_analytics) | All-time performance for any wallet address you name. | `data:read` |
+| [`get_portfolio_summary`](/tools/get_portfolio_summary) | Your own balances, open positions, and unrealized PnL. | `trade:read` |
+| [`alpha_search`](/tools/alpha_search) | Ranked wallets matching filters you describe. | `data:read` |
+| [`list_user_watchlists`](/tools/list_user_watchlists) | Your saved watchlists with a stats rollup. | `data:read` |
+| [`get_watchlist_wallets`](/tools/get_watchlist_wallets) | The wallets inside one of your watchlists. | `data:read` |
+| [`get_copy_trade_status`](/tools/get_copy_trade_status) | Your copy-trade configuration and recent activity. | `data:read` |
+
+## Realtime market and wallet data
+
+| Tool | What it answers | Permission |
+| --- | --- | --- |
+| [`get_market_snapshot`](/tools/get_market_snapshot) | Live price, funding, open interest, and volume for up to 20 coins. | `data:read` |
+| [`get_order_book`](/tools/get_order_book) | Live L2 order book for one coin. | `data:read` |
+| [`get_recent_trades`](/tools/get_recent_trades) | The latest public trades on one coin. | `data:read` |
+| [`get_candles`](/tools/get_candles) | OHLCV candles for one coin, 1m to 1d. | `data:read` |
+| [`get_funding`](/tools/get_funding) | Current, predicted, and historical funding for one coin. | `data:read` |
+| [`list_markets`](/tools/list_markets) | Every tradable perp and dex on Hyperliquid. | `data:read` |
+| [`get_wallet_open_orders`](/tools/get_wallet_open_orders) | Live resting orders for any wallet address. | `data:read` |
+| [`get_wallet_recent_fills`](/tools/get_wallet_recent_fills) | Recent fills for any wallet address. | `data:read` |
+
+## How a call is shaped
+
+Each tool takes a small object of named inputs and returns a `summary` line plus its data as JSON.
+Over MCP the client handles this for you. Over plain HTTP, `tools/list` returns every tool with its
+input and output schema, and `tools/call` runs one — see [Plain HTTP](/connect/http) for complete
+examples.
+
+## Calling a tool this overview doesn't list
+
+Only the 14 tools above are exposed. A request for any other name is refused by the server; there
+is no hidden tool set.
+
+If a call is refused, the reason comes back as a short sentence — see [Errors](/errors).

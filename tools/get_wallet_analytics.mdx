@@ -1,0 +1,84 @@
+---
+title: "get_wallet_analytics"
+description: "All-time performance summary for a single Hyperliquid wallet."
+---
+
+Answers "how is this wallet doing?" for a named address. Public lookup: it returns analytics for
+whichever address you provide, not for the signed-in user. For your own account use
+[`get_portfolio_summary`](/tools/get_portfolio_summary).
+
+## Inputs
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `address` | string | Yes | Hyperliquid wallet address: 42-character hex string starting with `0x`. Lowercased before lookup. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `net_pnl` | number | Net profit and loss in USD. |
+| `realized_pnl` | number | Realized PnL in USD. |
+| `total_fees` | number | Total fees paid in USD. |
+| `volume` | number | Cumulative traded volume in USD. |
+| `completed_trades` | integer | Number of completed trades. |
+| `wins` | integer | Number of winning trades. |
+| `losses` | integer | Number of losing trades. |
+| `win_rate` | number | Win rate as a percentage. |
+| `profit_factor` | number | Gross profit divided by gross loss. |
+| `coins_traded_count` | integer | Number of distinct coins traded. |
+| `most_traded_coins` | string[] | Up to 5 coins, most-traded first. |
+| `first_trade` | string or null | ISO-8601 timestamp of the first trade. |
+| `last_trade` | string or null | ISO-8601 timestamp of the last trade. |
+| `bias` | object or null | Long/short split: `longTrades`, `shortTrades`, `longPercent`, `shortPercent`. |
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_wallet_analytics",
+      "arguments": { "address": "0x0000000000000000000000000000000000000000" }
+    }
+  }'
+```
+
+Trimmed example response (values are examples, not a real wallet):
+
+```json
+{
+  "summary": "812 trades · +$142,905 PnL · 57.4% wins",
+  "net_pnl": 142905.12,
+  "realized_pnl": 138420.5,
+  "total_fees": 30482.11,
+  "volume": 91230402.5,
+  "completed_trades": 812,
+  "wins": 466,
+  "losses": 346,
+  "win_rate": 57.4,
+  "profit_factor": 1.42,
+  "coins_traded_count": 24,
+  "most_traded_coins": ["BTC", "ETH", "SOL"],
+  "first_trade": "2025-01-04T11:02:00.000Z",
+  "last_trade": "2026-09-19T03:44:00.000Z",
+  "bias": { "longTrades": 470, "shortTrades": 342, "longPercent": 57.9, "shortPercent": 42.1 }
+}
+```
+
+## Limits and caveats
+
+- The address must be a full 42-character `0x` hex string. Anything else is refused as an invalid
+  input.
+- A wallet with no trading activity is not an error state the server confuses with success — it
+  returns a not-found refusal rather than zeros.
+- `most_traded_coins` is best-effort: if that secondary lookup fails, the field comes back as an
+  empty array while the rest of the summary still returns.
+- `first_trade`, `last_trade`, and `bias` are `null` when the data isn't available.

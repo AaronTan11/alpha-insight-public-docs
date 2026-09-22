@@ -1,0 +1,174 @@
+---
+title: "Plain HTTP"
+description: "Call the tools over HTTP with JSON-RPC 2.0."
+---
+
+MCP clients use the protocol for you. If you'd rather script against the server directly, the same
+tools are available over plain HTTP: send JSON-RPC 2.0 requests to
+`https://api.alphainsight.xyz/mcp` with your key in the `Authorization` header.
+
+The endpoint accepts `POST` only. `GET`, `PUT`, and other methods return `405`.
+
+## Required headers
+
+Every request needs three headers:
+
+| Header | Value |
+| --- | --- |
+| `Authorization` | `Bearer ak_live_…` (your API key) |
+| `Content-Type` | `application/json` |
+| `Accept` | `application/json, text/event-stream` |
+
+<Warning>
+The `Accept` header is required. The transport is Streamable HTTP, so a request that doesn't accept
+both `application/json` and `text/event-stream` is rejected with `406` before it reaches the tool.
+Curl's default `Accept: */*` is not enough.
+</Warning>
+
+<Warning>
+Never put your key in a URL or a query parameter. Alpha Insight reads credentials only from the
+`Authorization` header, and request paths are logged.
+</Warning>
+
+## List the tools
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
+```
+
+The response lists every tool with its input and output schema, so you can build requests from the
+server's own definitions.
+
+## Call a wallet tool
+
+Wallet and analytics tools take IDs or addresses you already own or name explicitly. This is a
+`get_wallet_analytics` call for a public address (the all-zero address below is a placeholder):
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/call",
+    "params": {
+      "name": "get_wallet_analytics",
+      "arguments": { "address": "0x0000000000000000000000000000000000000000" }
+    }
+  }'
+```
+
+A successful result carries the one-line summary and the full output, both as text, plus the
+`structuredContent` object. Trimmed example (values are examples, not a real wallet):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "content": [
+      { "type": "text", "text": "812 trades · +$142,905 PnL · 57.4% wins" },
+      { "type": "text", "text": "{\"summary\":\"812 trades · +$142,905 PnL · 57.4% wins\",\"net_pnl\":142905.12,\"win_rate\":57.4}" }
+    ],
+    "structuredContent": {
+      "summary": "812 trades · +$142,905 PnL · 57.4% wins",
+      "net_pnl": 142905.12,
+      "realized_pnl": 138420.5,
+      "total_fees": 30482.11,
+      "volume": 91230402.5,
+      "completed_trades": 812,
+      "wins": 466,
+      "losses": 346,
+      "win_rate": 57.4,
+      "profit_factor": 1.42,
+      "coins_traded_count": 24,
+      "most_traded_coins": ["BTC", "ETH", "SOL"],
+      "first_trade": "2025-01-04T11:02:00.000Z",
+      "last_trade": "2026-09-19T03:44:00.000Z",
+      "bias": { "longTrades": 470, "shortTrades": 342, "longPercent": 57.9, "shortPercent": 42.1 }
+    }
+  }
+}
+```
+
+## Call a market tool
+
+Market and wallet-state tools take a coin ticker, address, or ID. This is a `get_market_snapshot`
+call for two coins:
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "get_market_snapshot",
+      "arguments": { "coins": ["BTC", "ETH"] }
+    }
+  }'
+```
+
+Trimmed example (values are examples):
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      { "type": "text", "text": "2 market(s) · BTC $111,204" },
+      { "type": "text", "text": "{\"summary\":\"2 market(s) · BTC $111,204\"}" }
+    ],
+    "structuredContent": {
+      "summary": "2 market(s) · BTC $111,204",
+      "markets": [
+        {
+          "requested": "BTC",
+          "coin": "BTC",
+          "dex": "main",
+          "mid_price": 111205.5,
+          "mark_price": 111204,
+          "oracle_price": 111198.5,
+          "funding_rate_hourly": 0.0000125,
+          "open_interest_base": 32145.2,
+          "open_interest_usd": 3574685120.0,
+          "volume_24h_usd": 12843000000.0,
+          "premium": 0.00005,
+          "change_24h_pct": 1.84
+        }
+      ],
+      "unresolved": []
+    }
+  }
+}
+```
+
+## Errors
+
+A tool that refuses returns a normal JSON-RPC result with `isError: true` and the sentence in both
+the text block and `_meta.message`. Trimmed example:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "isError": true,
+    "_meta": { "message": "Too many requests right now — try again in 5 seconds." },
+    "content": [{ "type": "text", "text": "Too many requests right now — try again in 5 seconds." }]
+  }
+}
+```
+
+A missing or bad credential fails earlier, before any tool runs, as an HTTP `401` (or `403`) with a
+JSON-RPC error object. See [Errors](/errors) for every refusal.

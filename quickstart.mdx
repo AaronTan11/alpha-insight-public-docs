@@ -1,47 +1,84 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "Create a key, connect Claude Code, and run your first tool."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+This takes about two minutes. You need an Alpha Insight account and
+[Claude Code](https://docs.anthropic.com/en/docs/claude-code) installed.
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Create an API key">
+    Go to [alphainsight.xyz/settings?tab=api-keys](https://alphainsight.xyz/settings?tab=api-keys)
+    and click **Generate a new key**.
 
-    ```bash
-    npm install your-package
-    ```
+    The full key is shown once. Copy it now — you cannot see it again. It starts with `ak_live_`.
+
+    <Warning>
+      Treat the key like a password. Don't commit it, and don't put it in a URL — request paths are
+      logged. See [API keys](/auth/api-keys) for creating and revoking keys.
+    </Warning>
+
+    <Note>
+      The **API Keys** screen is part of a paid plan. On a free account, connect with OAuth instead —
+      see [claude.ai](/connect/claude).
+    </Note>
   </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+  <Step title="Connect Claude Code">
+    Run this once, replacing the key with the one you just copied:
 
     ```bash
-    your-cli init
+    claude mcp add --transport http alpha-insight https://api.alphainsight.xyz/mcp --header "Authorization: Bearer ak_live_your_key_here"
     ```
+
+    Claude Code prints `Added …` when the configuration is written. Check the connection with:
+
+    ```bash
+    claude mcp list
+    ```
+
+    A healthy entry reads `✔ Connected`. To sign in with OAuth instead of a key, omit the
+    `--header` part and run `/mcp` inside Claude Code — see
+    [Claude Code](/connect/claude-code).
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+  <Step title="Run your first tool">
+    In Claude Code, ask:
 
-    ```bash
-    your-cli start
+    ```text
+    Use list_markets to show me the perps on the main exchange.
     ```
+
+    Claude Code calls `list_markets` on the server and shows the result.
+  </Step>
+  <Step title="See a result">
+    `list_markets` returns a one-line summary plus the full JSON. A trimmed example:
+
+    ```json
+    {
+      "summary": "212 perps across 9 dex(es)",
+      "dexes": [
+        { "name": "main", "full_name": "Hyperliquid main exchange" }
+      ],
+      "perps": [
+        { "coin": "BTC", "dex": "main", "max_leverage": 40, "sz_decimals": 5, "delisted": false },
+        { "coin": "ETH", "dex": "main", "max_leverage": 25, "sz_decimals": 4, "delisted": false }
+      ],
+      "spot_tokens": []
+    }
+    ```
+
+    The numbers above are examples. Your call returns live data from Hyperliquid.
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Next steps
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Connect another client" icon="plug" href="/connect/claude">
+    claude.ai, Claude Desktop, Cursor, VS Code, or plain HTTP.
+  </Card>
+  <Card title="Browse the tools" icon="list" href="/tools/overview">
+    All 14 tools, with inputs, outputs, and a real example call each.
+  </Card>
+</CardGroup>
+
+Stuck? Reach us at [support@alphainsight.xyz](mailto:support@alphainsight.xyz).

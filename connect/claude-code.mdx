@@ -1,0 +1,53 @@
+---
+title: "Claude Code"
+description: "Connect Claude Code with an API key or OAuth."
+---
+
+Claude Code speaks Streamable HTTP, so you can point it straight at Alpha Insight. You can sign in
+with an API key or with OAuth.
+
+## With an API key
+
+Run this once, replacing the key with one from
+[Settings → API Keys](https://alphainsight.xyz/settings?tab=api-keys):
+
+```bash
+claude mcp add --transport http alpha-insight https://api.alphainsight.xyz/mcp --header "Authorization: Bearer ak_live_your_key_here"
+```
+
+That writes the server to your local Claude Code configuration. To share it with a project instead,
+add `--scope project`; Claude Code then writes a `.mcp.json` file you can commit.
+
+Check the connection:
+
+```bash
+claude mcp list
+```
+
+A healthy entry reads `✔ Connected`. Other useful commands:
+
+```bash
+claude mcp get alpha-insight   # details for this server
+claude mcp remove alpha-insight  # remove it
+```
+
+## With OAuth
+
+Instead of a key, omit the `--header` part:
+
+```bash
+claude mcp add --transport http alpha-insight https://api.alphainsight.xyz/mcp
+```
+
+Then start Claude Code and run `/mcp`. Choose the Alpha Insight server and complete the sign-in.
+Claude Code stores the tokens and refreshes them, so you only do this once.
+
+<Note>
+The key is a secret. Don't paste it into a URL or a shared file. If a key leaks, revoke it in
+**Settings → API Keys** and create a new one — see [API keys](/auth/api-keys).
+</Note>
+
+## Next steps
+
+- [Tools overview](/tools/overview) — the 14 tools you can now call.
+- [Plain HTTP](/connect/http) — the same tools over `curl`, without an MCP client.

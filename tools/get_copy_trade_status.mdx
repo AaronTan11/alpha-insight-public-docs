@@ -1,0 +1,120 @@
+---
+title: "get_copy_trade_status"
+description: "Your copy-trade configuration and recent activity."
+---
+
+Reports the signed-in account's copy-trade setup and recent orders. Use it to see whether a
+copy-trade is enabled or paused, why an order wasn't copied, and what the recent orders looked like.
+
+## Inputs
+
+| Field | Type | Required | Description |
+| --- | --- | --- | --- |
+| `watchlist_id` | string (UUID) | No | Inspect one watchlist. Omit to list all of the account's copy-trade configs (up to 20). When provided, you must own the watchlist. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `configs` | object[] | One entry per copy-trade configuration. |
+| `truncated` | boolean | `true` when more configs exist than are shown. |
+
+Each entry in `configs` has:
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `watchlist_id` | string | The watchlist the configuration is attached to. |
+| `watchlist_name` | string | The watchlist's name. |
+| `enabled` | boolean | Whether the configuration is on. |
+| `sizing_mode` | string | How position size is chosen. |
+| `fixed_size_usd` | number or null | Fixed size, when that mode is used. |
+| `equity_percentage` | number or null | Equity percentage, when that mode is used. |
+| `leverage_mode` | string | How leverage is chosen. |
+| `fixed_leverage` | number or null | Fixed leverage, when that mode is used. |
+| `max_leverage` | number or null | Leverage ceiling, when set. |
+| `track_all_trades` | boolean | Whether every source trade is tracked. |
+| `copy_limit_orders` | boolean | Whether limit orders are copied. |
+| `max_position_size_usd` | number or null | Position-size cap, when set. |
+| `max_open_positions` | integer or null | Open-position cap, when set. |
+| `slippage_tolerance_bps` | integer or null | Slippage tolerance in basis points, when set. |
+| `consecutive_failures` | integer | Count of consecutive failed copies. |
+| `last_failure_reason` | string or null | The most recent failure reason, in plain language. |
+| `paused_at` | string or null | ISO-8601 timestamp when the configuration was paused. |
+| `recent_orders` | object[] | Up to 10 most recent orders, newest first. |
+
+Each entry in `recent_orders` has: `coin`, `direction` (or `null`), `action_type` (or `null`),
+`status`, `status_text` (the sentence a person would read), `size` (or `null`), `limit_px` (or
+`null`), `placed_at` (ISO-8601), and `failure_reason` (or `null`).
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_copy_trade_status",
+      "arguments": {}
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "1 copy-trade config · 1 enabled",
+  "configs": [
+    {
+      "watchlist_id": "3f2a1c4e-9b7d-4a2f-8c1e-2d5b7a9f0c33",
+      "watchlist_name": "High-conviction perps",
+      "enabled": true,
+      "sizing_mode": "equity_percentage",
+      "fixed_size_usd": null,
+      "equity_percentage": 2.5,
+      "leverage_mode": "fixed",
+      "fixed_leverage": 5,
+      "max_leverage": 10,
+      "track_all_trades": true,
+      "copy_limit_orders": false,
+      "max_position_size_usd": 5000,
+      "max_open_positions": 5,
+      "slippage_tolerance_bps": 50,
+      "consecutive_failures": 0,
+      "last_failure_reason": null,
+      "paused_at": null,
+      "recent_orders": [
+        {
+          "coin": "BTC",
+          "direction": "long",
+          "action_type": "open",
+          "status": "placed",
+          "status_text": "Placed",
+          "size": 0.1,
+          "limit_px": 108240.5,
+          "placed_at": "2026-09-19T03:44:00.000Z",
+          "failure_reason": null
+        }
+      ]
+    }
+  ],
+  "truncated": false
+}
+```
+
+## Limits and caveats
+
+- At most 20 configurations are returned, and at most 10 recent orders per configuration. When more
+  configurations exist, `truncated` is `true`.
+- When you pass a `watchlist_id` that doesn't exist or isn't yours, the tool refuses with a
+  not-found result.
+- `status_text` is the sentence shown on other surfaces; `status` is a short machine-readable value.
+- Old orders that carry no classification report `action_type` as `unclassified` rather than a
+  guessed value.
+- Reasons and names are user-entered or historical text and are returned as-is.

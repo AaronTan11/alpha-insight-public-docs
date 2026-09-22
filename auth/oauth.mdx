@@ -1,0 +1,65 @@
+---
+title: "OAuth"
+description: "Connect an app with OAuth 2.1 and approve it on the consent screen."
+---
+
+OAuth is how clients like claude.ai connect without an API key. You approve the connection once on
+a consent screen, and the client keeps itself connected.
+
+## The flow, as you see it
+
+1. **You add the server to the app.** In claude.ai, that's **Settings → Connectors → Add custom
+   connector** with the URL `https://api.alphainsight.xyz/mcp`. The app reads Alpha Insight's
+   discovery documents and registers itself.
+2. **The consent page opens** in your browser, hosted by Alpha Insight. If you're not signed in yet,
+   you sign in there.
+3. **You review the request.** The page shows the app's name, the host it will send you back to, and
+   exactly what it's asking to do.
+4. **You click Allow** (or **Deny**). If you allow it, the app finishes connecting and its tools
+   appear.
+
+Each consent request is single-use and time-limited. If one expires, start the connection again from
+the app.
+
+## What Allow grants
+
+The consent page lists the permissions the app requested, each with a plain sentence and its raw
+name beside it. The three permissions are:
+
+| Permission | Sentence shown on the consent screen |
+| --- | --- |
+| `data:read` | See market data and your analytics. |
+| `trade:read` | See your balances, orders and fills. |
+| `trade:write` | Place, change and cancel orders with your money. It can never withdraw. |
+
+The page shows only what the app asked for. Clicking **Allow** grants exactly those permissions —
+nothing more.
+
+<Note>
+`trade:write` is one of the permissions Alpha Insight can record, but no tool is behind it today.
+Every current tool works with `data:read` except `get_portfolio_summary`, which needs `trade:read`.
+See [Permissions](/auth/scopes).
+</Note>
+
+## Disconnect
+
+Open **Settings → Connected Apps** and click **Disconnect** next to the app. Disconnecting revokes
+the app's tokens immediately.
+
+<Note>
+The **Connected Apps** screen is part of a paid plan. On a free account you can still disconnect
+from the app itself — for claude.ai, remove the connector in its own **Settings → Connectors**.
+
+{/* TODO-OWNER: confirm the published plan wording for the Connected Apps screen */}
+</Note>
+
+## For client builders
+
+Alpha Insight speaks OAuth 2.1 with PKCE and public clients. The discovery documents are live:
+
+- `https://api.alphainsight.xyz/.well-known/oauth-protected-resource`
+- `https://api.alphainsight.xyz/.well-known/oauth-authorization-server`
+
+They advertise the issuer (`https://api.alphainsight.xyz`), the authorization, token,
+registration, and revocation endpoints, PKCE with `S256`, and the supported permissions. Clients
+register dynamically; no client secret is accepted.

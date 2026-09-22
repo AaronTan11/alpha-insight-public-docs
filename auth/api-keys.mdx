@@ -1,0 +1,61 @@
+---
+title: "API keys"
+description: "Create, use, and revoke an Alpha Insight API key."
+---
+
+An API key is the simplest way to connect. Send it as a bearer credential and any MCP client or
+HTTP script can call the tools as you.
+
+## Create a key
+
+1. Open [alphainsight.xyz/settings?tab=api-keys](https://alphainsight.xyz/settings?tab=api-keys).
+2. Optionally give the key a label, for example `Claude Desktop — laptop`.
+3. Click **Generate Key**.
+
+The full key is shown once, in a dialog. Copy it then — it cannot be shown again.
+
+Keys start with `ak_live_`. Alpha Insight stores only a hash of the key, never the key itself.
+
+<Note>
+The **API Keys** screen is part of a paid plan. If your account is on the free plan, connect with
+OAuth instead — see [claude.ai](/connect/claude) or [OAuth](/auth/oauth). Free accounts are welcome
+on the API; see [Limits](/limits).
+
+{/* TODO-OWNER: confirm the published plan wording for API-key creation */}
+</Note>
+
+## Use a key
+
+Send the key in the `Authorization` header:
+
+```text
+Authorization: Bearer ak_live_your_key_here
+```
+
+That works everywhere: Claude Code, Claude Desktop, Cursor, VS Code, or plain HTTP. See
+[Plain HTTP](/connect/http) for complete `curl` examples.
+
+<Warning>
+Never put a key in a URL or a query parameter. Alpha Insight reads credentials only from the
+`Authorization` header, and request paths are logged. If a key leaks, revoke it and create a new
+one.
+</Warning>
+
+## What a key can do
+
+A key is created with the `data:read` permission, which covers every tool except
+[`get_portfolio_summary`](/tools/get_portfolio_summary) — that one needs `trade:read`. See
+[Permissions](/auth/scopes) for the full list.
+
+A key created in Settings always holds `data:read`, so it can't call `get_portfolio_summary`. That
+tool needs a credential granted `trade:read` — for example a connection you approve on the consent
+screen with that permission. Alpha Insight never changes the permissions of a credential you already
+hold; a credential keeps exactly what it was granted.
+
+## Revoke a key
+
+Open **Settings → API Keys**, find the key, and click **Revoke**. Any client using that key loses
+access immediately. Revoking cannot be undone, so generate a new key if you need one.
+
+Each row shows when the key was created, when it was last used (and by which client, when known),
+and its permissions. You can switch the list between active keys and past (expired or revoked) ones.

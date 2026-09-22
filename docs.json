@@ -1,53 +1,95 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "name": "Alpha Insight",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#c9bba6",
+    "light": "#ccff00",
+    "dark": "#0a0908"
   },
-  "favicon": "/favicon.svg",
+  "favicon": "/favicon.ico",
   "navigation": {
     "pages": [
       {
-        "group": "Getting Started",
+        "group": "Getting started",
         "pages": [
           "index",
           "quickstart"
         ]
+      },
+      {
+        "group": "Connect a client",
+        "pages": [
+          "connect/claude",
+          "connect/claude-code",
+          "connect/claude-desktop",
+          "connect/other-clients",
+          "connect/http"
+        ]
+      },
+      {
+        "group": "Authentication",
+        "pages": [
+          "auth/api-keys",
+          "auth/oauth",
+          "auth/scopes"
+        ]
+      },
+      {
+        "group": "Tools",
+        "pages": [
+          "tools/overview",
+          {
+            "group": "Wallet analytics",
+            "pages": [
+              "tools/get_wallet_analytics",
+              "tools/get_portfolio_summary",
+              "tools/alpha_search",
+              "tools/list_user_watchlists",
+              "tools/get_watchlist_wallets",
+              "tools/get_copy_trade_status"
+            ]
+          },
+          {
+            "group": "Realtime market and wallet data",
+            "pages": [
+              "tools/get_market_snapshot",
+              "tools/get_order_book",
+              "tools/get_recent_trades",
+              "tools/get_candles",
+              "tools/get_funding",
+              "tools/list_markets",
+              "tools/get_wallet_open_orders",
+              "tools/get_wallet_recent_fills"
+            ]
+          }
+        ]
+      },
+      {
+        "group": "Reference",
+        "pages": [
+          "limits",
+          "errors",
+          "changelog"
+        ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
+    ]
   },
   "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
+    "light": "/logo/logo.png",
+    "dark": "/logo/logo.png"
   },
   "navbar": {
     "links": [
       {
         "label": "Support",
-        "href": "mailto:hi@mintlify.com"
+        "href": "mailto:support@alphainsight.xyz"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://app.mintlify.com"
+      "label": "alphainsight.xyz",
+      "href": "https://alphainsight.xyz"
     }
   },
   "contextual": {
@@ -64,9 +106,7 @@
   },
   "footer": {
     "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
+      "x": "https://x.com/Alpha_InsightX"
     }
   }
 }

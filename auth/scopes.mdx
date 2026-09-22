@@ -1,0 +1,65 @@
+---
+title: "Permissions"
+description: "What each permission lets a connected app do."
+---
+
+Every credential — an API key or an OAuth grant — carries a set of permissions. A credential can
+call a tool only if it holds the permission that tool needs. There are three permissions:
+
+| Permission | Sentence shown to you on the consent screen |
+| --- | --- |
+| `data:read` | See market data and your analytics. |
+| `trade:read` | See your balances, orders and fills. |
+| `trade:write` | Place, change and cancel orders with your money. It can never withdraw. |
+
+A credential holds exactly the permissions it was granted. One permission does not imply another:
+holding `trade:write` does not also grant `trade:read`.
+
+## Which tools need which permission
+
+Thirteen of the fourteen tools need `data:read`:
+
+| Tool | Permission |
+| --- | --- |
+| [`get_wallet_analytics`](/tools/get_wallet_analytics) | `data:read` |
+| [`alpha_search`](/tools/alpha_search) | `data:read` |
+| [`list_user_watchlists`](/tools/list_user_watchlists) | `data:read` |
+| [`get_watchlist_wallets`](/tools/get_watchlist_wallets) | `data:read` |
+| [`get_copy_trade_status`](/tools/get_copy_trade_status) | `data:read` |
+| [`get_market_snapshot`](/tools/get_market_snapshot) | `data:read` |
+| [`get_order_book`](/tools/get_order_book) | `data:read` |
+| [`get_recent_trades`](/tools/get_recent_trades) | `data:read` |
+| [`get_candles`](/tools/get_candles) | `data:read` |
+| [`get_funding`](/tools/get_funding) | `data:read` |
+| [`list_markets`](/tools/list_markets) | `data:read` |
+| [`get_wallet_open_orders`](/tools/get_wallet_open_orders) | `data:read` |
+| [`get_wallet_recent_fills`](/tools/get_wallet_recent_fills) | `data:read` |
+
+The fourteenth, [`get_portfolio_summary`](/tools/get_portfolio_summary), needs `trade:read`: it
+returns the signed-in user's own balances, positions, and fills.
+
+## No tool needs `trade:write` yet
+
+Alpha Insight can record a `trade:write` grant, and the consent screen explains it, but **no tool is
+behind it today**. Every tool you can currently call is read-only. See
+[Errors](/errors) for what a forbidden call returns.
+
+{/* TODO-OWNER: confirm the wording for when a tool behind trade:write becomes available */}
+
+## How credentials get their permissions
+
+- **A key created in Settings** starts with `data:read`. See [API keys](/auth/api-keys).
+- **An OAuth app** gets the permissions it asks for, shown to you on the consent screen before you
+  approve. See [OAuth](/auth/oauth).
+
+Because a Settings-created key holds only `data:read`, it cannot call
+[`get_portfolio_summary`](/tools/get_portfolio_summary). That tool needs a credential granted
+`trade:read`.
+
+<Note>
+Credentials that predate this permission model keep working exactly as before, so nothing you
+already connected was narrowed by it.
+</Note>
+
+If an app calls a tool it doesn't hold the permission for, the call is refused — it doesn't revoke
+or change anything. The app can keep calling the tools it does hold.

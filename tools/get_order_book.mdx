@@ -1,0 +1,68 @@
+---
+title: "get_order_book"
+description: "Live L2 order book for a single coin."
+---
+
+Returns the live L2 order book for one coin: the top bid and ask levels with price, size, and
+resting order count, plus the mid price and spread.
+
+## Inputs
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `coin` | string | Yes | — | Coin ticker, for example `BTC` or a HIP-3 asset like `xyz:TSLA`. |
+| `depth` | integer 1–20 | No | `10` | Number of price levels to return per side. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `coin` | string | The resolved coin. |
+| `time` | string | ISO-8601 timestamp of the book snapshot. |
+| `mid_price` | number or null | Midpoint between the best bid and best ask. |
+| `spread` | number or null | Best ask minus best bid. |
+| `spread_pct` | number or null | Spread as a percentage of the mid price. |
+| `bids` | object[] | Bid levels: `price`, `size`, `orders`. |
+| `asks` | object[] | Ask levels: `price`, `size`, `orders`. |
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_order_book",
+      "arguments": { "coin": "BTC", "depth": 10 }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "BTC book · mid $111204.75 · spread 0.0009%",
+  "coin": "BTC",
+  "time": "2026-09-22T03:30:00.000Z",
+  "mid_price": 111204.75,
+  "spread": 1.0,
+  "spread_pct": 0.0009,
+  "bids": [ { "price": 111204.5, "size": 1.24, "orders": 6 } ],
+  "asks": [ { "price": 111205.5, "size": 0.87, "orders": 4 } ]
+}
+```
+
+## Limits and caveats
+
+- 1–20 levels per side; the default is 10.
+- A bare ticker that matches more than one dex is refused, with the matching dex-qualified names
+  listed so you can pick one.
+- An unknown market is a not-found refusal, never an empty book.
+- Levels with a non-positive price are dropped.

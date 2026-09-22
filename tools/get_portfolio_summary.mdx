@@ -1,0 +1,81 @@
+---
+title: "get_portfolio_summary"
+description: "Your own Hyperliquid balances, open positions, and unrealized PnL."
+---
+
+Answers "what do I have?" for the signed-in account. It returns only the caller's own data — never
+another user's. Requires the `trade:read` permission.
+
+## Inputs
+
+| Field | Type | Required | Default | Description |
+| --- | --- | --- | --- | --- |
+| `include_spot` | boolean | No | `true` | Also include a spot balance count alongside perps. |
+
+## Output
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `summary` | string | One-line summary (≤100 characters). |
+| `perps_equity_usd` | number | Perps account equity in USD. |
+| `withdrawable_usd` | number | Withdrawable amount in USD. |
+| `total_unrealized_pnl_usd` | number | Total unrealized PnL across open positions, in USD. |
+| `open_positions_count` | integer | Number of open positions. |
+| `top_positions` | object[] | Up to 3 positions, largest by notional first. |
+| `spot_holdings_count` | integer or null | Number of spot balances above zero, or `null` if not requested or unavailable. |
+
+Each entry in `top_positions` has: `coin`, `direction` (`long` or `short`), `size`, `notional_usd`,
+`entry_price`, `unrealized_pnl_usd`, `return_on_equity_pct`, and `liquidation_price` (or `null`).
+
+## Example call
+
+```bash
+curl -sS https://api.alphainsight.xyz/mcp \
+  -H "Authorization: Bearer ak_live_your_key_here" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "get_portfolio_summary",
+      "arguments": { "include_spot": true }
+    }
+  }'
+```
+
+Trimmed example response (values are examples):
+
+```json
+{
+  "summary": "$48,204 equity · 2 open positions · +$1,842 uPnL",
+  "perps_equity_usd": 48204.5,
+  "withdrawable_usd": 31220.75,
+  "total_unrealized_pnl_usd": 1842.1,
+  "open_positions_count": 2,
+  "top_positions": [
+    {
+      "coin": "BTC",
+      "direction": "long",
+      "size": 0.42,
+      "notional_usd": 46705.68,
+      "entry_price": 108240.5,
+      "unrealized_pnl_usd": 1244.4,
+      "return_on_equity_pct": 8.4,
+      "liquidation_price": 74210.0
+    }
+  ],
+  "spot_holdings_count": 3
+}
+```
+
+## Limits and caveats
+
+- Requires `trade:read`. A credential that holds only `data:read` is refused with a message saying the
+  connection needs trading turned on. Credentials created before this permission model keep calling
+  it under their existing grant.
+- If your account has no linked wallet, the tool refuses rather than returning an empty portfolio.
+- `spot_holdings_count` is best-effort: if the spot lookup fails it comes back as `null`, and the
+  perps side of the summary still returns.
+- Reads live account state, so it reflects the moment of the call.
